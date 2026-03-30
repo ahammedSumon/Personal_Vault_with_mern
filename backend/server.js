@@ -2,7 +2,8 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 
-const MONGODB_URI = 'mongodb+srv://salauddin18_db_user:b0FftkoS9CMtt7Wt@cluster0.7x32g3f.mongodb.net/memoryVault?retryWrites=true&w=majority';
+require('dotenv').config();
+const MONGODB_URI = process.env.MONGODB_URI;
 
 mongoose.connect(MONGODB_URI).then(() => {
     console.log('Connected to Mongodb!')
