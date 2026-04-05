@@ -20,24 +20,49 @@ export const MemoryProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   }, []);
 
   const addMemory = async (memory: Memory): Promise<void> => {
-    await MemoryModel.add(memory);
-    // Refresh memories list
-    const updated = await MemoryModel.getAll();
-    setMemories(updated);
+    // Optimistic update - add to local state immediately
+    setMemories(prev => [memory, ...prev]);
+    
+    try {
+      // Send to backend
+      await MemoryModel.add(memory);
+    } catch (error) {
+      // Revert on error
+      setMemories(prev => prev.filter(m => m.id !== memory.id));
+      throw error;
+    }
   };
 
   const deleteMemory = async (id: string): Promise<void> => {
-    await MemoryModel.delete(id);
-    // Refresh memories list
-    const updated = await MemoryModel.getAll();
-    setMemories(updated);
+    // Optimistic update - remove from local state immediately
+    const previousMemories = memories;
+    setMemories(prev => prev.filter(m => m.id !== id));
+    
+    try {
+      // Send to backend
+      await MemoryModel.delete(id);
+    } catch (error) {
+      // Revert on error
+      setMemories(previousMemories);
+      throw error;
+    }
   };
 
   const updateMemory = async (id: string, updates: Partial<Memory>): Promise<void> => {
-    await MemoryModel.update(id, updates);
-    // Refresh memories list
-    const updated = await MemoryModel.getAll();
-    setMemories(updated);
+    // Optimistic update - update in local state immediately
+    const previousMemories = memories;
+    setMemories(prev => 
+      prev.map(m => m.id === id ? { ...m, ...updates } : m)
+    );
+    
+    try {
+      // Send to backend
+      await MemoryModel.update(id, updates);
+    } catch (error) {
+      // Revert on error
+      setMemories(previousMemories);
+      throw error;
+    }
   };
 
   const getRecentMemories = async (count: number): Promise<Memory[]> => {

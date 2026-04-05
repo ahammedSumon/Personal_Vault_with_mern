@@ -1,27 +1,27 @@
 /* Global Variables & Base Styles */
 
 :root {
-  /* Sky Blue, White, and Blue Theme - Rich & Deep */
-  --primary-dark: #0d47a1;      /* Deep Navy Blue */
-  --primary-light: #1976d2;     /* Rich Sky Blue */
-  --secondary: #7daacb;         /* Soft Blue */
-  --accent: #7daacb;            /* Soft Blue */
-  --accent-light: #9bbddb;      /* Light Blue */
-  --success: #2e7d32;
-  --warning: #e67e22;
-  --info: #1565c0;
+  /* Sky Blue, White, and Golden Theme */
+  --primary-dark: #1565c0;      /* Deep Sky Blue */
+  --primary-light: #e3f6fd;     /* Very Light Sky Blue */
+  --secondary: #fffbe6;         /* Soft White/Light Gold */
+  --accent: #ffd700;            /* Golden */
+  --accent-light: #fff8dc;      /* Light Golden */
+  --success: #4caf50;
+  --warning: #ffb300;
+  --info: #0288d1;
   --neutral-100: #ffffff;       /* White */
-  --neutral-200: #f5f5f5;       /* Off White */
-  --neutral-300: #e8eef7;       /* Very Light Blue */
-  --neutral-500: #5a8cc4;       /* Medium Blue */
-  --neutral-700: #1565c0;       /* Sky Blue */
-  --neutral-900: #0a3f7e;       /* Deep Blue */
-  --text-primary: #0d47a1;      /* Deep Blue */
-  --text-secondary: #ffffff;    /* White */
-  --border-color: #7daacb;
-  --shadow-sm: 0 1px 3px rgba(13, 71, 161, 0.12);
-  --shadow-md: 0 4px 12px rgba(13, 71, 161, 0.16);
-  --shadow-lg: 0 8px 24px rgba(13, 71, 161, 0.20);
+  --neutral-200: #f0f4f8;       /* Very Light Blue */
+  --neutral-300: #e0e7ef;       /* Light Blue */
+  --neutral-500: #90caf9;       /* Sky Blue */
+  --neutral-700: #1976d2;       /* Sky Blue (darker) */
+  --neutral-900: #0d47a1;       /* Deepest Blue */
+  --text-primary: #1565c0;      /* Sky Blue */
+  --text-secondary: #ffd700;    /* Golden */
+  --border-color: #e0e7ef;
+  --shadow-sm: 0 1px 3px rgba(21, 101, 192, 0.08);
+  --shadow-md: 0 4px 12px rgba(21, 101, 192, 0.12);
+  --shadow-lg: 0 8px 24px rgba(21, 101, 192, 0.15);
   --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 

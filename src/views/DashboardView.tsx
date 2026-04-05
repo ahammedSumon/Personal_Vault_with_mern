@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Memory } from '../types';
 import { useMemory } from '../context/MemoryContext';
 import { useAuth } from '../context/AuthContext';
@@ -9,25 +9,36 @@ import MemoryDetailModal from './MemoryDetailModal';
 import '../styles/Dashboard.css';
 
 type DashboardTab = 'hero' | 'add' | 'list';
+type FilterType = 'all' | 'photo' | 'note' | 'voice' | 'document';
 
 const DashboardView: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<DashboardTab>('hero');
+  const [activeTab, setActiveTab] = useState<DashboardTab>(() => {
+    const saved = localStorage.getItem('activeTab');
+    return (saved as DashboardTab) || 'hero';
+  });
   const [selectedMemory, setSelectedMemory] = useState<Memory | null>(null);
-  const { memories } = useMemory();
+  const [filterType, setFilterType] = useState<FilterType>('all');
+  const { memories, loading } = useMemory();
   const { logout } = useAuth();
   
-  // Get recent memories (last 12) sorted by date
-  const recentMemories = [...memories]
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-    .slice(0, 12);
+  // Persist activeTab to localStorage
+  useEffect(() => {
+    localStorage.setItem('activeTab', activeTab);
+  }, [activeTab]);
+  
+  // Memoize sorting to avoid recalculation on every render
+  const recentMemories = useMemo(() => {
+    return [...memories]
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .slice(0, 12);
+  }, [memories]);
 
-  // Group memories by type
-  const memoriesByType = {
-    photo: recentMemories.filter(m => m.type === 'photo').slice(0, 3),
-    note: recentMemories.filter(m => m.type === 'note').slice(0, 3),
-    voice: recentMemories.filter(m => m.type === 'voice').slice(0, 3),
-    document: recentMemories.filter(m => m.type === 'document').slice(0, 3),
-  };
+  // Apply filter
+  const filteredMemories = useMemo(() => {
+    return filterType === 'all' 
+      ? recentMemories 
+      : recentMemories.filter(m => m.type === filterType);
+  }, [recentMemories, filterType]);
 
   const handleLogout = () => {
     if (window.confirm('Are you sure you want to logout?')) {
@@ -37,7 +48,6 @@ const DashboardView: React.FC = () => {
 
   const handleCardClick = (memory: Memory) => {
     setSelectedMemory(memory);
-    // Prevent body scroll when modal is open
     document.body.style.overflow = 'hidden';
   };
 
@@ -82,105 +92,92 @@ const DashboardView: React.FC = () => {
               <h2>Welcome to Your Personal Safe Vault</h2>
               <p>Securely store and organize your photos, notes, voice messages, documents, and files.</p>
 
-              {recentMemories.length > 0 ? (
+              {loading ? (
+                <div className="loading-container">
+                  <div className="loading-spinner"></div>
+                  <p>Loading your items...</p>
+                </div>
+              ) : recentMemories.length > 0 ? (
                 <div className="recent-memories">
-                  {memoriesByType.photo.length > 0 && (
-                    <div className="type-section type-photos">
-                      <h3>📷 Photos</h3>
-                      <div className="memory-grid photos-grid">
-                        {memoriesByType.photo.map((memory) => (
-                          <div 
-                            key={memory.id} 
-                            className="memory-card photo-card"
-                            onClick={() => handleCardClick(memory)}
-                            role="button"
-                            tabIndex={0}
-                          >
-                            <div className="memory-icon">📷</div>
-                            <div className="memory-info">
-                              <h4>{memory.title}</h4>
-                              <p className="memory-description">{memory.description || 'No description'}</p>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                  {/* Filter Buttons */}
+                  <div className="filter-buttons">
+                    <button
+                      className={`filter-btn ${filterType === 'all' ? 'active' : ''}`}
+                      onClick={() => setFilterType('all')}
+                    >
+                      All Items
+                    </button>
+                    <button
+                      className={`filter-btn ${filterType === 'photo' ? 'active' : ''}`}
+                      onClick={() => setFilterType('photo')}
+                    >
+                      📷 Photos
+                    </button>
+                    <button
+                      className={`filter-btn ${filterType === 'note' ? 'active' : ''}`}
+                      onClick={() => setFilterType('note')}
+                    >
+                      📝 Notes
+                    </button>
+                    <button
+                      className={`filter-btn ${filterType === 'voice' ? 'active' : ''}`}
+                      onClick={() => setFilterType('voice')}
+                    >
+                      🎙️ Voice
+                    </button>
+                    <button
+                      className={`filter-btn ${filterType === 'document' ? 'active' : ''}`}
+                      onClick={() => setFilterType('document')}
+                    >
+                      📄 Documents
+                    </button>
+                  </div>
 
-                  {memoriesByType.note.length > 0 && (
-                    <div className="type-section type-notes">
-                      <h3>📝 Notes</h3>
-                      <div className="memory-grid notes-grid">
-                        {memoriesByType.note.map((memory) => (
-                          <div 
-                            key={memory.id} 
-                            className="memory-card note-card"
-                            onClick={() => handleCardClick(memory)}
-                            role="button"
-                            tabIndex={0}
-                          >
-                            <div className="memory-icon">📝</div>
-                            <div className="memory-info">
-                              <h4>{memory.title}</h4>
-                              <p className="memory-description">{memory.description || 'No description'}</p>
+                  {/* Unified Memory Grid */}
+                  <div className="memory-grid unified-grid">
+                    {filteredMemories.length > 0 ? (
+                      filteredMemories.map((memory) => (
+                        <div 
+                          key={memory.id} 
+                          className={`memory-card ${memory.type}-card`}
+                          onClick={() => handleCardClick(memory)}
+                          role="button"
+                          tabIndex={0}
+                        >
+                          {memory.type === 'photo' && memory.thumbnail && (
+                            <div className="memory-thumbnail">
+                              <img src={memory.thumbnail} alt={memory.title} />
                             </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {memoriesByType.voice.length > 0 && (
-                    <div className="type-section type-voice">
-                      <h3>🎙️ Voice Messages</h3>
-                      <div className="memory-grid voice-grid">
-                        {memoriesByType.voice.map((memory) => (
-                          <div 
-                            key={memory.id} 
-                            className="memory-card voice-card"
-                            onClick={() => handleCardClick(memory)}
-                            role="button"
-                            tabIndex={0}
-                          >
-                            <div className="memory-icon">🎙️</div>
-                            <div className="memory-info">
-                              <h4>{memory.title}</h4>
-                              <p className="memory-description">{memory.description || 'No description'}</p>
+                          )}
+                          {memory.type !== 'photo' && (
+                            <div className="memory-icon-large">
+                              {memory.type === 'note' && '📝'}
+                              {memory.type === 'voice' && '🎙️'}
+                              {memory.type === 'document' && '📄'}
                             </div>
+                          )}
+                          <div className="memory-overlay">
+                            <div className="memory-type-badge">{memory.type}</div>
+                            <h4>{memory.title}</h4>
+                            {memory.description && (
+                              <p className="memory-description">{memory.description.substring(0, 60)}...</p>
+                            )}
+                            <p className="memory-date">{formatDate(memory.createdAt)}</p>
                           </div>
-                        ))}
+                        </div>
+                      ))
+                    ) : (
+                      <div className="no-results">
+                        <p>No {filterType === 'all' ? 'items' : filterType + 's'} yet</p>
                       </div>
-                    </div>
-                  )}
-
-                  {memoriesByType.document.length > 0 && (
-                    <div className="type-section type-documents">
-                      <h3>📄 Documents</h3>
-                      <div className="memory-grid docs-grid">
-                        {memoriesByType.document.map((memory) => (
-                          <div 
-                            key={memory.id} 
-                            className="memory-card doc-card"
-                            onClick={() => handleCardClick(memory)}
-                            role="button"
-                            tabIndex={0}
-                          >
-                            <div className="memory-icon">📄</div>
-                            <div className="memory-info">
-                              <h4>{memory.title}</h4>
-                              <p className="memory-description">{memory.description || 'No description'}</p>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
               ) : (
                 <div className="empty-state">
-                  <p>📭 No Data yet. Start by adding your first Data!</p>
+                  <p>📭 No items yet. Start by adding your first data!</p>
                   <button onClick={() => setActiveTab('add')} className="cta-button">
-                    Add Your First Data
+                    Add Your First Item
                   </button>
                 </div>
               )}
@@ -197,7 +194,6 @@ const DashboardView: React.FC = () => {
             memory={selectedMemory} 
             onClose={() => {
               setSelectedMemory(null);
-              // Restore body scroll when modal closes
               document.body.style.overflow = 'unset';
             }} 
           />

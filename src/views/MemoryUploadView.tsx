@@ -86,12 +86,12 @@ const MemoryUploadView: React.FC = () => {
       setDescription('');
       setNoteContent('');
       setFile(null);
-      setSuccess('Memory added successfully!');
+      setSuccess('Item added successfully!');
 
       // Clear success message after 3 seconds
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
-      setError('Failed to add memory. Please try again.');
+      setError('Failed to add item. Please try again.');
       console.error(err);
     } finally {
       setIsLoading(false);
@@ -101,12 +101,12 @@ const MemoryUploadView: React.FC = () => {
   return (
     <div className="memory-upload-container">
       <div className="upload-card">
-        <h2>Add New Memory</h2>
+        <h2>Add New Item</h2>
 
         <form onSubmit={handleSubmit} className="upload-form">
-          {/* Memory Type Selection */}
+          {/* Item Type Selection */}
           <div className="form-group">
-            <label>Memory Type</label>
+            <label>Item Type</label>
             <div className="type-selector">
               <button
                 type="button"
@@ -228,7 +228,7 @@ const MemoryUploadView: React.FC = () => {
 
           {/* Submit Button */}
           <button type="submit" className="submit-button" disabled={isLoading}>
-            {isLoading ? 'Adding Memory...' : 'Add Memory'}
+            {isLoading ? 'Adding Item...' : 'Add Item'}
           </button>
         </form>
       </div>

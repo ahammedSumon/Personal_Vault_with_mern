@@ -71,20 +71,21 @@ const MemoryEditView: React.FC<MemoryEditViewProps> = ({ memory, onSave, onClose
       }
 
       if (file && (memory.type === 'photo' || memory.type === 'voice' || memory.type === 'document')) {
-        updates.content = file.name;
+        // Convert file to base64 for storage
+        updates.content = await fileToDataUrl(file);
         if (memory.type === 'photo' && preview) {
           updates.thumbnail = preview;
         }
       }
 
       onSave(updates);
-      setSuccess('Memory updated successfully!');
+      setSuccess('Item updated successfully!');
 
       setTimeout(() => {
         onClose();
       }, 500);
     } catch (err) {
-      setError('Failed to update memory. Please try again.');
+      setError('Failed to update item. Please try again.');
       console.error(err);
     } finally {
       setIsLoading(false);

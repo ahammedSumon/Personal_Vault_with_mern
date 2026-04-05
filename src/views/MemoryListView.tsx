@@ -6,11 +6,13 @@ import MemoryEditView from './MemoryEditView';
 import '../styles/MemoryList.css';
 
 const MemoryListView: React.FC<{onMemoryClick?: (memory: Memory) => void}> = ({ onMemoryClick }) => {
-  const { memories, deleteMemory, updateMemory } = useMemory();
+  const { memories, loading, deleteMemory, updateMemory } = useMemory();
   const [filterType, setFilterType] = useState<'all' | 'photo' | 'note' | 'voice' | 'document'>('all');
   const [sortBy, setSortBy] = useState<'newest' | 'oldest'>('newest');
   const [searchQuery, setSearchQuery] = useState('');
   const [editingMemory, setEditingMemory] = useState<Memory | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const filteredMemories = memories.filter((memory) => {
     const matchesType = filterType === 'all' || memory.type === filterType;
@@ -29,7 +31,16 @@ const MemoryListView: React.FC<{onMemoryClick?: (memory: Memory) => void}> = ({ 
 
   const handleDelete = async (id: string, title: string) => {
     if (window.confirm(`Delete "${title}"?`)) {
-      await deleteMemory(id);
+      setDeletingId(id);
+      setError(null);
+      try {
+        await deleteMemory(id);
+      } catch (err) {
+        setError('Failed to delete item. Please try again.');
+        console.error(err);
+      } finally {
+        setDeletingId(null);
+      }
     }
   };
 
@@ -39,8 +50,14 @@ const MemoryListView: React.FC<{onMemoryClick?: (memory: Memory) => void}> = ({ 
 
   const handleSaveEdit = async (updates: Partial<Memory>) => {
     if (editingMemory) {
-      await updateMemory(editingMemory.id, updates);
-      setEditingMemory(null);
+      setError(null);
+      try {
+        await updateMemory(editingMemory.id, updates);
+        setEditingMemory(null);
+      } catch (err) {
+        setError('Failed to update item. Please try again.');
+        console.error(err);
+      }
     }
   };
 
@@ -53,7 +70,7 @@ const MemoryListView: React.FC<{onMemoryClick?: (memory: Memory) => void}> = ({ 
   return (
     <div className="memory-list-container">
       <div className="list-header">
-        <h2>All Memories ({sortedMemories.length})</h2>
+        <h2>All Items ({sortedMemories.length})</h2>
 
         <div className="list-controls">
           {/* Search */}
@@ -98,50 +115,70 @@ const MemoryListView: React.FC<{onMemoryClick?: (memory: Memory) => void}> = ({ 
         </div>
       </div>
 
-      {sortedMemories.length > 0 ? (
+      {loading ? (
+        <div className="loading-container">
+          <div className="loading-spinner"></div>
+          <p>Loading your items...</p>
+        </div>
+      ) : sortedMemories.length > 0 ? (
         <div className="memories-grid">
+          {error && (
+            <div className="error-message" style={{ gridColumn: '1 / -1' }}>
+              ⚠️ {error}
+            </div>
+          )}
           {sortedMemories.map((memory) => (
             <div 
               key={memory.id} 
-              className="memory-card"
+              className={`memory-card ${memory.type}-card`}
               onClick={() => handleCardClick(memory)}
               role="button"
               tabIndex={0}
             >
-              <div className="card-header">
-                <span className="card-icon">
-                  {memory.type === 'photo' ? '📷' : memory.type === 'note' ? '📝' : memory.type === 'voice' ? '🎙️' : '📄'}
-                </span>
-                <h4 className="card-title">{memory.title}</h4>
-              </div>
-              <p className="card-description">
-                {memory.description || (typeof memory.content === 'string' ? memory.content.substring(0, 80) : 'Uploaded file')}
-              </p>
-              <div className="card-footer">
-                <span className="card-date">{formatDate(memory.createdAt)}</span>
-                <div className="card-actions" onClick={(e) => e.stopPropagation()}>
-                  <button
-                    onClick={() => handleEdit(memory)}
-                    className="edit-button"
-                    title="Edit memory"
-                  >
-                    ✏️
-                  </button>
-                  <button
-                    onClick={() => handleDelete(memory.id, memory.title)}
-                    className="delete-button"
-                    title="Delete memory"
-                  >
-                    🗑️
-                  </button>
+              {memory.type === 'photo' && memory.thumbnail && (
+                <div className="memory-thumbnail">
+                  <img src={memory.thumbnail} alt={memory.title} />
                 </div>
+              )}
+              {memory.type !== 'photo' && (
+                <div className="memory-icon-large">
+                  {memory.type === 'note' && '📝'}
+                  {memory.type === 'voice' && '🎙️'}
+                  {memory.type === 'document' && '📄'}
+                </div>
+              )}
+              <div className="memory-overlay">
+                <div className="memory-type-badge">{memory.type}</div>
+                <h4>{memory.title}</h4>
+                {memory.description && (
+                  <p className="memory-description">{memory.description.substring(0, 60)}...</p>
+                )}
+                <p className="memory-date">{formatDate(memory.createdAt)}</p>
+              </div>
+              <div className="card-actions" onClick={(e) => e.stopPropagation()}>
+                <button
+                  onClick={() => handleEdit(memory)}
+                  className="edit-button"
+                  title="Edit item"
+                  disabled={deletingId === memory.id}
+                >
+                  {deletingId === memory.id ? '⏳' : '✏️'}
+                </button>
+                <button
+                  onClick={() => handleDelete(memory.id, memory.title)}
+                  className="delete-button"
+                  title="Delete item"
+                  disabled={deletingId === memory.id}
+                >
+                  {deletingId === memory.id ? '⏳' : '🗑️'}
+                </button>
               </div>
             </div>
           ))}
         </div>
       ) : (
         <div className="empty-state">
-          <p>📭 No memories found</p>
+          <p>📭 No items found</p>
           {filterType !== 'all' && (
             <button onClick={() => setFilterType('all')} className="reset-filter">
               Clear Filter
